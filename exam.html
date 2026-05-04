@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examination — ProctorAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="exam-page">
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ═══ WEBCAM GATE — blocks exam until webcam is active ═══ -->
+<div class="webcam-gate" id="webcamGate">
+  <div class="gate-card">
+    <div class="corner-tr"></div><div class="corner-bl"></div>
+    <div class="gate-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    </div>
+    <h2 class="gate-title">WEBCAM REQUIRED</h2>
+    <p class="gate-text">This proctored exam requires webcam access for face monitoring. Please allow camera permission to proceed.</p>
+    <button class="submit-btn" id="enableCamBtn" onclick="requestWebcam()">[ ENABLE WEBCAM ]</button>
+    <div class="gate-status" id="gateStatus"></div>
+    <a href="/logout" class="gate-exit">> Exit Exam</a>
+  </div>
+</div>
+
+<!-- ═══ VIOLATION OVERLAY — shown on auto-submit ═══ -->
+<div class="violation-overlay" id="violationOverlay" style="display:none;">
+  <div class="gate-card">
+    <div class="corner-tr"></div><div class="corner-bl"></div>
+    <div class="gate-icon warn">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h2 class="gate-title" style="color:var(--red)">EXAM TERMINATED</h2>
+    <p class="gate-text">You have exceeded the maximum number of violations (5). Your exam has been auto-submitted.</p>
+    <div class="gate-status" id="violationDetail"></div>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="exam-status-bar" id="examStatusBar" style="display:none;">
+  <div class="status-left">
+    <div class="status-indicator live"><span class="pulse-dot"></span><span>PROCTORED</span></div>
+    <span class="student-info">> {{ user.fname }} {{ user.lname }} [{{ user.roll }}]</span>
+  </div>
+  <div class="status-center">
+    <span class="q-progress">QUESTION <span id="currentQNum">1</span> / <span id="totalQs">{{ questions|length }}</span></span>
+  </div>
+  <div class="status-right">
+    <div class="violation-counter" id="violationCounter">
+      <span class="v-label">VIOLATIONS:</span>
+      <span class="v-count" id="vCount">0</span>
+      <span class="v-max">/ 5</span>
+    </div>
+    <div class="timer-display">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="timerText">00:00</span>
+    </div>
+  </div>
+</div>
+
+<!-- Alert banners -->
+<div class="alert-container" id="alertContainer"></div>
+
+<!-- Main layout -->
+<div class="exam-layout" id="examLayout" style="display:none;">
+  <!-- Webcam panel -->
+  <div class="webcam-panel">
+    <div class="webcam-header"><span class="wcam-dot"></span>WEBCAM FEED</div>
+    <div class="webcam-wrapper">
+      <video id="webcamVideo" autoplay playsinline muted></video>
+      <canvas id="webcamOverlay"></canvas>
+      <div class="webcam-status" id="webcamStatus">INITIALIZING...</div>
+    </div>
+    <div class="webcam-metrics">
+      <div class="wm-row"><span>> Head Movements</span><span id="metricHead" class="metric-val">0</span></div>
+      <div class="wm-row"><span>> Face Detected</span><span id="faceStatus" class="metric-val face-ok">YES</span></div>
+    </div>
+  </div>
+
+  <!-- Exam card -->
+  <div class="exam-card">
+    <div id="questionArea">
+      {% for q in questions %}
+      <div class="question-block" data-qid="{{ q.id }}" data-type="{{ q.type }}" style="display:{{ 'block' if loop.index == 1 else 'none' }};">
+        <div class="question-number">> QUESTION {{ q.id }} {% if q.type == 'text' %}<span class="q-type-badge">[WRITING]</span>{% else %}<span class="q-type-badge mcq">[MCQ]</span>{% endif %}</div>
+        <h2 class="question-text">{{ q.question }}</h2>
+
+        {% if q.type == 'mcq' %}
+        <div class="options-grid">
+          {% for opt in q.options %}
+          <label class="option-card" id="opt-{{ q.id }}-{{ loop.index }}">
+            <input type="radio" name="q{{ q.id }}" value="{{ opt }}">
+            <span class="option-marker">{{ ['A','B','C','D'][loop.index0] }}</span>
+            <span class="option-text">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-answer-area">
+          <textarea class="text-answer" id="textq{{ q.id }}" name="textq{{ q.id }}" placeholder="Type your answer here... (Copy/Paste is BLOCKED)" rows="6"></textarea>
+          <div class="text-footer">
+            <span class="char-count" id="charCount{{ q.id }}">0 characters</span>
+            <span class="paste-warn">⚠ Paste disabled</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="exam-nav">
+      <button class="nav-btn" id="prevBtn" disabled>< PREV</button>
+      <div class="question-dots" id="questionDots"></div>
+      <button class="nav-btn" id="nextBtn">NEXT ></button>
+      <button class="nav-btn submit-glow" id="submitBtn" style="display:none;">[ SUBMIT EXAM ]</button>
+    </div>
+  </div>
+
+  <!-- Monitoring sidebar -->
+  <div class="monitor-panel">
+    <div class="monitor-header">> LIVE MONITORING</div>
+    <div class="m-row"><span>> Tab Switches</span><span id="metricTabs" class="metric-val">0</span></div>
+    <div class="m-row"><span>> Idle Time</span><span id="metricIdle" class="metric-val">0s</span></div>
+    <div class="m-row"><span>> Answer Changes</span><span id="metricChanges" class="metric-val">0</span></div>
+    <div class="m-row"><span>> Copy/Paste</span><span id="metricCopy" class="metric-val">0</span></div>
+    <div class="m-row"><span>> Head Moves</span><span id="metricHeadSide" class="metric-val">0</span></div>
+    <div class="monitor-footer">
+      <div class="threat-level" id="threatLevel">
+        <span class="threat-label">> THREAT LEVEL</span>
+        <span class="threat-bar"><span class="threat-fill" id="threatFill"></span></span>
+        <span class="threat-text" id="threatText">LOW</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MediaPipe Face Mesh via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="/static/script.js"></script>
+</body>
+</html>

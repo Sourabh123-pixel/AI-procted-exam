@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Results — ProctorAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="result-page">
+<canvas id="matrix-canvas"></canvas>
+<div class="shell">
+  <div class="result-card">
+    <div class="corner-tr"></div><div class="corner-bl"></div>
+
+    <!-- Header -->
+    <div class="result-header">
+      {% if result.label == "Normal" %}
+      <div class="result-icon-ring ok">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h1 class="result-title">EXAM COMPLETED</h1>
+      <div class="status-badge badge-ok">> NO SUSPICIOUS ACTIVITY DETECTED</div>
+      {% else %}
+      <div class="result-icon-ring warn">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h1 class="result-title">EXAM COMPLETED</h1>
+      <div class="status-badge badge-warn">> SUSPICIOUS ACTIVITY FLAGGED</div>
+      {% endif %}
+    </div>
+
+    <!-- Score -->
+    <div class="score-section">
+      <div class="score-ring">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" class="ring-bg"/>
+          <circle cx="60" cy="60" r="52" class="ring-fg" style="stroke-dasharray: {{ (result.correct / result.total * 326.73)|round(2) }} 326.73"/>
+        </svg>
+        <div class="score-inner">
+          <span class="score-num">{{ result.correct }}</span>
+          <span class="score-den">/ {{ result.total }}</span>
+        </div>
+      </div>
+      <div class="score-label">> YOUR SCORE</div>
+    </div>
+
+    <!-- Behavior metrics -->
+    <div class="metrics-title">> BEHAVIOR ANALYSIS</div>
+    <div class="metrics-grid">
+      <div class="metric-box">
+        <div class="metric-icon">⏱</div>
+        <div><span class="metric-name">AVG TIME/Q</span><span class="metric-val">{{ result.time_per_question }}s</span></div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-icon">🔀</div>
+        <div><span class="metric-name">TAB SWITCHES</span><span class="metric-val">{{ result.tab_switch_count }}</span></div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-icon">💤</div>
+        <div><span class="metric-name">IDLE TIME</span><span class="metric-val">{{ result.idle_time }}s</span></div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-icon">✏️</div>
+        <div><span class="metric-name">ANS CHANGES</span><span class="metric-val">{{ result.answer_change_count }}</span></div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-icon">📋</div>
+        <div><span class="metric-name">COPY/PASTE</span><span class="metric-val">{{ result.copy_paste_attempts }}</span></div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-icon">👤</div>
+        <div><span class="metric-name">HEAD MOVES</span><span class="metric-val">{{ result.head_movement_count }}</span></div>
+      </div>
+      <div class="metric-box {% if result.label != 'Normal' %}metric-alert{% endif %}">
+        <div class="metric-icon">🤖</div>
+        <div><span class="metric-name">ANOMALY SCORE</span><span class="metric-val">{{ result.anomaly_score }}</span></div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="result-actions">
+      <a href="/logout" class="submit-btn" style="text-align:center">[ LOGOUT ]</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Matrix Rain (same as login)
+(function(){
+  const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
+  let W,H,cols,drops;
+  const CHARS='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*ﾊﾋｼﾀﾁﾃﾄﾘｳｺﾈｴｶｷﾑﾕﾗ';const FS=14;
+  function init(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;cols=Math.floor(W/FS);drops=Array.from({length:cols},()=>Math.random()*-80);}
+  function draw(){ctx.fillStyle='rgba(2,13,2,0.055)';ctx.fillRect(0,0,W,H);for(let i=0;i<cols;i++){const ch=CHARS[Math.floor(Math.random()*CHARS.length)];const y=drops[i]*FS;ctx.fillStyle='#afffcf';ctx.font=`bold ${FS}px "Share Tech Mono",monospace`;ctx.fillText(ch,i*FS,y);ctx.fillStyle=i%5===0?'#00ff41':'#00881a';ctx.font=`${FS}px "Share Tech Mono",monospace`;ctx.fillText(CHARS[Math.floor(Math.random()*CHARS.length)],i*FS,y-FS);if(y>H&&Math.random()>0.975)drops[i]=0;drops[i]+=0.5;}}
+  init();setInterval(draw,45);window.addEventListener('resize',init);
+})();
+</script>
+</body>
+</html>

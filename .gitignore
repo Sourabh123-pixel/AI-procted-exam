@@ -1,0 +1,34 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Model files (regenerated on first run)
+model.pkl
+scaler.pkl
+dataset.csv
+
+# User data
+users.json
+
+# Virtual env
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Old files
+*.bak
+proctor_auth (1).html
+student_exam_data.csv

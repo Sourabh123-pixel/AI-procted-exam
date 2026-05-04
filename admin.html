@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — ProctorAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="admin-page">
+
+<!-- Sidebar -->
+<aside class="admin-sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-logo-sm">PROCTOR<span style="color:#00cc33">AI</span></span>
+    <span class="brand-sub-sm"><span class="status-dot"></span>ADMIN</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/admin" class="nav-link active">> Dashboard</a>
+    <a href="/logout" class="nav-link">> Logout</a>
+  </nav>
+  <div class="sidebar-footer">
+    <span class="admin-user">> {{ user.fname }} {{ user.lname }}</span>
+    <span class="admin-role">[EXAMINER]</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="admin-main">
+  <div class="admin-header">
+    <h1 class="admin-title">> ADMIN DASHBOARD</h1>
+    <p class="admin-sub">Real-time exam proctoring & malpractice detection powered by Isolation Forest ML</p>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-icon-box blue">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div>
+        <span class="stat-num" id="totalStudents">0</span>
+        <span class="stat-label">> TOTAL STUDENTS</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-box green">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <span class="stat-num" id="normalStudents">0</span>
+        <span class="stat-label">> NORMAL</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-box red">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <span class="stat-num" id="suspiciousStudents">0</span>
+        <span class="stat-label">> FLAGGED</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <div class="table-top">
+      <h2>> STUDENT RECORDS</h2>
+      <button class="nav-btn" id="refreshBtn">[ REFRESH ]</button>
+    </div>
+
+    <div class="table-empty" id="tableEmpty">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>No exam submissions yet.</p>
+      <span>Students will appear here after completing their exams.</span>
+    </div>
+
+    <div class="table-scroll" id="tableScroll" style="display:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Score</th><th>Time/Q</th>
+            <th>Tabs</th><th>Idle</th><th>Ans.Chg</th><th>Copy</th>
+            <th>Head</th><th>Violations</th><th>Anomaly</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+async function loadStudents(){
+  try{
+    const res=await fetch('/api/students');
+    const students=await res.json();
+    document.getElementById('totalStudents').textContent=students.length;
+    const normal=students.filter(s=>s.prediction===1).length;
+    const suspicious=students.filter(s=>s.prediction===-1).length;
+    document.getElementById('normalStudents').textContent=normal;
+    document.getElementById('suspiciousStudents').textContent=suspicious;
+
+    if(students.length===0){
+      document.getElementById('tableEmpty').style.display='flex';
+      document.getElementById('tableScroll').style.display='none';
+      return;
+    }
+    document.getElementById('tableEmpty').style.display='none';
+    document.getElementById('tableScroll').style.display='block';
+
+    const tbody=document.getElementById('studentTableBody');
+    tbody.innerHTML='';
+    students.forEach(s=>{
+      const flagged=s.prediction===-1;
+      const row=document.createElement('tr');
+      if(flagged)row.classList.add('row-flagged');
+      row.innerHTML=`
+        <td>${s.student_id}</td>
+        <td>${s.student_name}</td>
+        <td>${s.score}</td>
+        <td>${s.time_per_question}</td>
+        <td>${s.tab_switch_count}</td>
+        <td>${s.idle_time}</td>
+        <td>${s.answer_change_count}</td>
+        <td>${s.copy_paste_attempts}</td>
+        <td>${s.head_movement_count}</td>
+        <td>${s.violation_count || 0}${s.auto_submitted ? ' ⛔' : ''}</td>
+        <td>${s.anomaly_score}</td>
+        <td><span class="badge ${flagged?'badge-warn':'badge-ok'}">${flagged?'⚠ SUSPICIOUS':'✓ NORMAL'}</span></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }catch(err){console.error('Failed to load:',err);}
+}
+document.getElementById('refreshBtn').addEventListener('click',loadStudents);
+loadStudents();
+setInterval(loadStudents,10000);
+</script>
+</body>
+</html>

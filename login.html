@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProctorAI — Secure Exam Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-page">
+<canvas id="matrix-canvas"></canvas>
+<div class="shell">
+  <div class="card">
+    <div class="corner-tr"></div><div class="corner-bl"></div>
+    <div class="brand">
+      <span class="brand-logo">PROCTOR<span style="color:#00cc33">AI</span></span>
+      <span class="brand-sub"><span class="status-dot"></span>SECURE EXAM PORTAL &nbsp;·&nbsp; v2.4.1</span>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">[ LOGIN ]</button>
+      <button class="tab-btn" onclick="switchTab('signup')">[ REGISTER ]</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="form-panel active" id="panel-login">
+      <div class="wcam-badge"><div class="wcam-dot"></div>WEBCAM MONITORING ACTIVE DURING EXAM SESSION</div>
+      <div class="alert err" id="login-err">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="login-err-msg">ACCESS DENIED — Invalid credentials.</span>
+      </div>
+      <div class="alert ok" id="login-ok">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="login-ok-msg">IDENTITY VERIFIED — Initializing exam portal...</span>
+      </div>
+      <div class="field">
+        <label><span class="lprefix">&gt;</span>Email address</label>
+        <input type="email" id="login-email" placeholder="user@university.edu">
+      </div>
+      <div class="field">
+        <label><span class="lprefix">&gt;</span>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••••••">
+      </div>
+      <button class="submit-btn" onclick="handleLogin()" id="login-btn">AUTHENTICATE</button>
+      <div class="divider">OR</div>
+      <div class="switch-link">No account? <a href="#" onclick="switchTab('signup')">REGISTER ACCESS</a></div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div class="form-panel" id="panel-signup">
+      <div class="alert err" id="signup-err">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="signup-err-msg">ERROR — Check your inputs.</span>
+      </div>
+      <div class="alert ok" id="signup-ok">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>ACCESS GRANTED — Account registered successfully.</span>
+      </div>
+      <div style="margin-bottom:0.4rem;font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;"><span class="lprefix">&gt;</span>Select role</div>
+      <div class="role-grid">
+        <div class="role-opt">
+          <input type="radio" name="role" id="r-student" value="student" checked>
+          <label class="role-lbl" for="r-student">
+            <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>STUDENT
+          </label>
+        </div>
+        <div class="role-opt">
+          <input type="radio" name="role" id="r-examiner" value="examiner">
+          <label class="role-lbl" for="r-examiner">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>EXAMINER
+          </label>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label><span class="lprefix">&gt;</span>First name</label><input type="text" id="s-fname" placeholder="Arjun"></div>
+        <div class="field"><label><span class="lprefix">&gt;</span>Last name</label><input type="text" id="s-lname" placeholder="Singh"></div>
+      </div>
+      <div class="field"><label><span class="lprefix">&gt;</span>Roll No. / Employee ID</label><input type="text" id="s-roll" placeholder="CSE2023001"></div>
+      <div class="field"><label><span class="lprefix">&gt;</span>Email address</label><input type="email" id="s-email" placeholder="you@university.edu"></div>
+      <div class="field">
+        <label><span class="lprefix">&gt;</span>Password</label>
+        <input type="password" id="s-pass" placeholder="Min 8 characters" oninput="checkStr(this.value)">
+        <div class="str-bar"><div class="str-fill" id="str-fill"></div></div>
+        <div class="str-label" id="str-label"></div>
+      </div>
+      <div class="field"><label><span class="lprefix">&gt;</span>Confirm password</label><input type="password" id="s-conf" placeholder="Re-enter password"></div>
+      <button class="submit-btn" onclick="handleSignup()" id="signup-btn">CREATE SECURE ACCOUNT</button>
+      <div class="divider">OR</div>
+      <div class="switch-link">Already registered? <a href="#" onclick="switchTab('login')">LOGIN HERE</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Matrix Rain
+(function(){
+  const canvas=document.getElementById('matrix-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,cols,drops;
+  const CHARS='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()[]{}|;:,.?/~`ﾊﾋｼﾀﾁﾃﾄﾘｳｺﾈｴｶｷﾑﾕﾗｾﾈｵあいうえおアイウエオ';
+  const FS=14;
+  function init(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+    cols=Math.floor(W/FS);
+    drops=Array.from({length:cols},()=>Math.random()*-80);
+  }
+  function draw(){
+    ctx.fillStyle='rgba(2,13,2,0.055)';
+    ctx.fillRect(0,0,W,H);
+    for(let i=0;i<cols;i++){
+      const ch=CHARS[Math.floor(Math.random()*CHARS.length)];
+      const y=drops[i]*FS;
+      ctx.fillStyle='#afffcf';
+      ctx.font=`bold ${FS}px "Share Tech Mono",monospace`;
+      ctx.fillText(ch,i*FS,y);
+      ctx.fillStyle=i%5===0?'#00ff41':'#00881a';
+      ctx.font=`${FS}px "Share Tech Mono",monospace`;
+      ctx.fillText(CHARS[Math.floor(Math.random()*CHARS.length)],i*FS,y-FS);
+      if(y>H&&Math.random()>0.975)drops[i]=0;
+      drops[i]+=0.5;
+    }
+  }
+  init();
+  setInterval(draw,45);
+  window.addEventListener('resize',init);
+})();
+
+// Auth — now calls Flask backend
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='signup')));
+  document.querySelectorAll('.form-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  clearAll();
+}
+function clearAll(){
+  document.querySelectorAll('.alert').forEach(a=>a.classList.remove('show'));
+  document.querySelectorAll('input[type="text"],input[type="email"],input[type="password"]').forEach(i=>i.classList.remove('bad'));
+}
+function show(id){document.getElementById(id).classList.add('show');}
+function bad(id){const el=document.getElementById(id);if(el)el.classList.add('bad');}
+function checkStr(v){
+  const fill=document.getElementById('str-fill');
+  const lbl=document.getElementById('str-label');
+  let s=0;
+  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  const lvl=[{w:'0%',bg:'transparent',txt:''},{w:'25%',bg:'#ff2d55',txt:'WEAK'},{w:'50%',bg:'#ffaa00',txt:'FAIR'},{w:'75%',bg:'#00aaff',txt:'GOOD'},{w:'100%',bg:'#00ff41',txt:'STRONG'}][s];
+  fill.style.width=lvl.w;fill.style.background=lvl.bg;lbl.textContent=lvl.txt;lbl.style.color=lvl.bg;
+}
+
+async function handleSignup(){
+  clearAll();
+  const fn=document.getElementById('s-fname').value.trim();
+  const ln=document.getElementById('s-lname').value.trim();
+  const rn=document.getElementById('s-roll').value.trim();
+  const em=document.getElementById('s-email').value.trim().toLowerCase();
+  const pw=document.getElementById('s-pass').value;
+  const cf=document.getElementById('s-conf').value;
+  const role=document.querySelector('input[name="role"]:checked').value;
+  const err=m=>{document.getElementById('signup-err-msg').textContent='ERROR — '+m;show('signup-err');};
+
+  if(!fn||!ln){bad('s-fname');bad('s-lname');return err('Full name required.');}
+  if(!rn){bad('s-roll');return err('Roll number required.');}
+  if(!em||!em.includes('@')){bad('s-email');return err('Valid email required.');}
+  if(pw.length<8){bad('s-pass');return err('Password must be 8+ characters.');}
+  if(pw!==cf){bad('s-conf');return err('Passwords do not match.');}
+
+  const btn=document.getElementById('signup-btn');
+  btn.textContent='REGISTERING...';btn.classList.add('loading');
+
+  try{
+    const res=await fetch('/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fname:fn,lname:ln,roll:rn,email:em,password:pw,role})
+    });
+    const data=await res.json();
+    if(!data.ok){btn.textContent='CREATE SECURE ACCOUNT';btn.classList.remove('loading');return err(data.msg);}
+    show('signup-ok');
+    setTimeout(()=>{switchTab('login');btn.textContent='CREATE SECURE ACCOUNT';btn.classList.remove('loading');},1800);
+  }catch(e){btn.textContent='CREATE SECURE ACCOUNT';btn.classList.remove('loading');err('Network error.');}
+}
+
+async function handleLogin(){
+  clearAll();
+  const em=document.getElementById('login-email').value.trim().toLowerCase();
+  const pw=document.getElementById('login-password').value;
+  if(!em){bad('login-email');return;}
+  if(!pw){bad('login-password');return;}
+
+  const btn=document.getElementById('login-btn');
+  btn.textContent='AUTHENTICATING...';btn.classList.add('loading');
+
+  try{
+    const res=await fetch('/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:em,password:pw})
+    });
+    const data=await res.json();
+    if(!data.ok){
+      document.getElementById('login-err-msg').textContent='ACCESS DENIED — '+data.msg;
+      bad('login-email');bad('login-password');show('login-err');
+      btn.textContent='AUTHENTICATE';btn.classList.remove('loading');
+      return;
+    }
+    document.getElementById('login-ok-msg').textContent='IDENTITY VERIFIED — Welcome, '+data.msg.replace('Welcome, ','');
+    show('login-ok');
+    setTimeout(()=>{window.location.href=data.redirect;},1500);
+  }catch(e){btn.textContent='AUTHENTICATE';btn.classList.remove('loading');}
+}
+</script>
+</body>
+</html>
